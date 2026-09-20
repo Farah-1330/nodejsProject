@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Node.js HTTP Server – Notes</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 560px; margin: 3rem auto; padding: 0 1rem; color: #1a1a1a; }
+    h1 { margin-bottom: .25rem; }
+    p.sub { color: #666; margin-top: 0; }
+    form { display: flex; gap: .5rem; margin: 1.5rem 0; }
+    input { flex: 1; padding: .6rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+    button { padding: .6rem 1rem; border: 0; border-radius: 6px; background: #2f7d32; color: #fff; cursor: pointer; font-size: 1rem; }
+    ul { list-style: none; padding: 0; }
+    li { display: flex; justify-content: space-between; align-items: center; padding: .7rem; border: 1px solid #e5e5e5; border-radius: 6px; margin-bottom: .5rem; }
+    li button { background: #c62828; padding: .3rem .7rem; font-size: .85rem; }
+    .empty { color: #888; }
+  </style>
+</head>
+<body>
+  <h1>Notes</h1>
+  <p class="sub">Served by a plain Node.js <code>http</code> server. Notes are saved to disk with <code>fs</code>.</p>
+
+  <form id="form">
+    <input id="text" placeholder="Write a note..." required />
+    <button>Add</button>
+  </form>
+
+  <ul id="list"></ul>
+
+  <script>
+    const list = document.getElementById('list');
+    const form = document.getElementById('form');
+    const input = document.getElementById('text');
+
+    async function load() {
+      const notes = await (await fetch('/api/notes')).json();
+      list.innerHTML = notes.length ? '' : '<li class="empty">No notes yet.</li>';
+      for (const n of notes) {
+        const li = document.createElement('li');
+        const span = document.createElement('span');
+        span.textContent = n.text;
+        const btn = document.createElement('button');
+        btn.textContent = 'Delete';
+        btn.onclick = async () => { await fetch('/api/notes/' + n.id, { method: 'DELETE' }); load(); };
+        li.append(span, btn);
+        list.appendChild(li);
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: input.value }),
+      });
+      input.value = '';
+      load();
+    });
+
+    load();
+  </script>
+</body>
+</html>
